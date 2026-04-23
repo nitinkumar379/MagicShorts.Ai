@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && incoming().uid == userId 
+        && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) 
+        && incoming().uid == userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+
+      // YouTube Accounts Subcollection
+      match /youtubeAccounts/{accountId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Video Projects
+    match /videos/{videoId} {
+      function isValidVideo(data) {
+        return data.userId is string 
+          && data.userId.size() <= 128
+          && data.status in ['downloading', 'analyzing', 'editing', 'scheduled', 'uploading', 'completed', 'failed']
+          && data.title is string && data.title.size() <= 200
+          && (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 2048))
+          && data.keys().hasAll(['userId', 'status', 'createdAt', 'updatedAt']);
+      }
+
+      // Pillar 8: Secure List Queries
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isOwner(incoming().userId)
+        && isValidVideo(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() 
+        && isOwner(existing().userId)
+        && isValidVideo(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Rename/Update Metadata
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'updatedAt']) ||
+          // Action: System Status Update
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'statusMessage', 'updatedAt', 'outputPath', 'youtubeVideoId'])
+        );
+
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+  }
+}

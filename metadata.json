@@ -1,0 +1,13 @@
+{
+  "name": "ShortsMagic AI",
+  "description": "Powerful AI-driven YouTube Shorts automation. Convert long-form content into viral vertical clips with AI highlight detection, automated cropping, and one-click YouTube publishing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI-Video Analysis",
+    "Automated Video Editing",
+    "YouTube Publishing"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Video": {
+      "title": "Video Project",
+      "description": "Information about a video being processed or scheduled",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "sourceUrl": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["downloading", "analyzing", "editing", "scheduled", "uploading", "completed", "failed"]
+        },
+        "statusMessage": { "type": "string" },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "youtubeVideoId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "status"]
+    },
+    "YouTubeAccount": {
+      "title": "YouTube Account",
+      "description": "Linked YouTube channel credentials",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "channelId": { "type": "string" },
+        "channelTitle": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "channelId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "videos/{videoId}": {
+      "schema": "Video",
+      "description": "Video projects and statuses"
+    },
+    "users/{userId}/youtubeAccounts/{accountId}": {
+      "schema": "YouTubeAccount",
+      "description": "Linked YouTube accounts for a user"
+    }
+  }
+}
